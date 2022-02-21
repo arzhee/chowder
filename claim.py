@@ -61,13 +61,24 @@ for name, note in notes.items():
 
         vault = note.functions.tokenOfOwnerByIndex(me, i).call()
 
-        max = note.functions.endEpoch(vault).call()
-
         pearl = lake.functions.reward(address, vault).call()
 
-        print(vault, pearl, max - epoch)
+        print('Note #' + str(vault), pearl, 'PEARLs')
 
-        if (pearl == 0) or ((max - epoch) == 0):
+        if pearl == 0:
+            time.sleep(2)
+
+            continue
+
+        time.sleep(1)
+
+        epochs = int(note.functions.endEpoch(vault).call()) - epoch
+
+        print('Note #' + str(vault), epochs, 'epochs')
+
+        if epochs == 0:
+            time.sleep(2)
+
             continue
 
         tx = lake.functions.claimReward(address, vault).buildTransaction(tx)
@@ -76,8 +87,10 @@ for name, note in notes.items():
 
         hash = w3.eth.sendRawTransaction(signed.rawTransaction)
 
-        print(vault, w3.toHex(hash))
+        print('Claimed!', w3.toHex(hash))
 
         time.sleep(2)
 
         nonce = nonce + 1
+
+    time.sleep(2)
