@@ -21,7 +21,6 @@ price = int(data['data']['fast']['price'])
 
 w3 = Web3(Web3.HTTPProvider(rpc))
 me = Web3.toChecksumAddress(me)
-nonce = w3.eth.getTransactionCount(me)
 
 notes = {}
 notes['014-sfhand'] = '0xC713af03353710EA37DF849237E32a936a63cBbd'
@@ -50,6 +49,28 @@ for name, note in notes.items():
     vaults = []
 
     for i in range(items):
+        vault = note.functions.tokenOfOwnerByIndex(me, i).call()
+
+        pearl = lake.functions.reward(address, vault).call()
+
+        print('Note #' + str(vault), pearl, 'PEARLs')
+
+        time.sleep(2)
+
+        if pearl == 0:
+            continue
+
+        epochs = int(note.functions.endEpoch(vault).call()) - epoch
+
+        print('Note #' + str(vault), epochs, 'epochs')
+
+        time.sleep(2)
+
+        if epochs == 0:
+            continue
+
+        nonce = w3.eth.getTransactionCount(me)
+
         tx = {
             'nonce': nonce,
             'gas': 150000,
@@ -59,27 +80,7 @@ for name, note in notes.items():
             'type': '0x2'
         }
 
-        vault = note.functions.tokenOfOwnerByIndex(me, i).call()
-
-        pearl = lake.functions.reward(address, vault).call()
-
-        print('Note #' + str(vault), pearl, 'PEARLs')
-
-        if pearl == 0:
-            time.sleep(2)
-
-            continue
-
-        time.sleep(1)
-
-        epochs = int(note.functions.endEpoch(vault).call()) - epoch
-
-        print('Note #' + str(vault), epochs, 'epochs')
-
-        if epochs == 0:
-            time.sleep(2)
-
-            continue
+        print('Note #' + str(vault), nonce)
 
         tx = lake.functions.claimReward(address, vault).buildTransaction(tx)
 
@@ -90,7 +91,5 @@ for name, note in notes.items():
         print('Claimed!', w3.toHex(hash))
 
         time.sleep(2)
-
-        nonce = nonce + 1
 
     time.sleep(2)
