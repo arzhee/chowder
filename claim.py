@@ -15,20 +15,6 @@ me = os.getenv('OTTERCLAM_ADDRESS')
 key = os.getenv('OTTERCLAM_PRIVATE')
 
 temp = path + '/notes.json'
-# prev = {}
-# prev['014-sfhand'] = []
-# prev['028-frhand'] = []
-# prev['028-sfhand'] = []
-# prev['090-sfhand'] = []
-# prev['090-sthand'] = []
-# prev['180-dmhand'] = []
-# prev['180-sfhand'] = []
-
-# if os.path.exists(temp):
-#     temp = open(temp, 'r+')
-#     prev = json.loads(temp.read())
-# else:
-#     temp = open(temp, 'x')
 
 w3 = Web3(Web3.HTTPProvider(rpc))
 me = Web3.toChecksumAddress(me)
@@ -50,11 +36,11 @@ abi = json.loads(open(path + '/lake.json').read())
 lake = w3.eth.contract(address = lake, abi = abi)
 
 def claim(address, vault):
+    global count
+
     print('[INFO]', 'Claiming PEARLs for Note #' + str(vault) + '...')
 
     hash = None
-
-    time.sleep(tout)
 
     link = 'https://api.debank.com/chain/'
     link += 'gas_price_dict_v2?chain=matic'
@@ -108,20 +94,19 @@ def get_nonce():
 
     nonce = None
 
-    time.sleep(tout)
-
     try:
         nonce = w3.eth.getTransactionCount(me)
 
-        if nonce <= count:
-            print('[INFO]', 'Nonce:', nonce, 'Current:', count)
-            print('[WARN]', 'Nonce not changed. Updating...')
+        if int(nonce) <= int(count):
+            time.sleep(tout)
 
             return get_nonce()
     except ValueError as e:
         print('[FAIL]', 'An error occured while getting the nonce **')
 
         return get_nonce()
+
+    print('[INFO]', 'Nonce:', nonce, 'Current:', count)
 
     return nonce
 
@@ -135,7 +120,7 @@ def get_pearl(address, vault):
     except ValueError as e:
         print('[FAIL]', 'An error occured while getting PEARLs for Note #' + str(vault) + '...')
 
-        return get_pearl(vault)
+        return get_pearl(address, vault)
 
     return pearl
 
@@ -165,10 +150,6 @@ for name, note in notes.items():
     vaults = []
 
     for index in range(items):
-        # if index in prev[name]:
-        #     print('Skipping index ' + str(index) + '...')
-        #     continue
-
         vault = get_vault(index)
         pearl = get_pearl(address, vault)
 
@@ -177,18 +158,9 @@ for name, note in notes.items():
         if pearl == 0:
             print('[WARN]', 'Skipping Note #' + str(vault) + '...')
 
-            # prev[name].append(index)
-            # temp.seek(0)
-            # temp.write(json.dumps(prev))
-            # temp.truncate()
-
             continue
 
         hash = claim(address, vault)
 
         print('[PASS]', 'Claimed!', hash)
-
-        # prev[name].append(index)
-        # temp.seek(0)
-        # temp.write(json.dumps(prev))
-        # temp.truncate()
+        print('[INFO] Current:', count)
