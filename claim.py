@@ -14,13 +14,26 @@ load_dotenv(dotenv_path = path + '/.env')
 me = os.getenv('OTTERCLAM_ADDRESS')
 key = os.getenv('OTTERCLAM_PRIVATE')
 
-link = 'https://api.debank.com/chain/'
-link += 'gas_price_dict_v2?chain=matic'
-data = requests.get(link).json()
-price = int(data['data']['fast']['price'])
+temp = path + '/notes.json'
+# prev = {}
+# prev['014-sfhand'] = []
+# prev['028-frhand'] = []
+# prev['028-sfhand'] = []
+# prev['090-sfhand'] = []
+# prev['090-sthand'] = []
+# prev['180-dmhand'] = []
+# prev['180-sfhand'] = []
+
+# if os.path.exists(temp):
+#     temp = open(temp, 'r+')
+#     prev = json.loads(temp.read())
+# else:
+#     temp = open(temp, 'x')
 
 w3 = Web3(Web3.HTTPProvider(rpc))
 me = Web3.toChecksumAddress(me)
+count = 0
+tout = 10
 
 notes = {}
 notes['014-sfhand'] = '0xC713af03353710EA37DF849237E32a936a63cBbd'
@@ -35,41 +48,23 @@ lake = '0xc67abda25d0421fe9dc1afd64183b179a426a256'
 lake = Web3.toChecksumAddress(lake)
 abi = json.loads(open(path + '/lake.json').read())
 lake = w3.eth.contract(address = lake, abi = abi)
-epoch = lake.functions.epoch().call()
 
-for name, note in notes.items():
-    print(name, note)
+def claim(address, vault):
+    print('[INFO]', 'Claiming PEARLs for Note #' + str(vault) + '...')
 
-    note = address = Web3.toChecksumAddress(note)
-    file = open(path + '/notes/' + name + '.json')
-    abi = json.loads(file.read())
-    note = w3.eth.contract(address = note, abi = abi)
+    hash = None
 
-    items = note.functions.balanceOf(me).call()
-    vaults = []
+    time.sleep(tout)
 
-    for i in range(items):
-        vault = note.functions.tokenOfOwnerByIndex(me, i).call()
+    link = 'https://api.debank.com/chain/'
+    link += 'gas_price_dict_v2?chain=matic'
+    data = requests.get(link).json()
+    price = int(data['data']['fast']['price'])
 
-        pearl = lake.functions.reward(address, vault).call()
+    try:
+        nonce = get_nonce()
 
-        print('Note #' + str(vault), pearl, 'PEARLs')
-
-        time.sleep(2)
-
-        if pearl == 0:
-            continue
-
-        epochs = int(note.functions.endEpoch(vault).call()) - epoch
-
-        print('Note #' + str(vault), epochs, 'epochs')
-
-        time.sleep(2)
-
-        if epochs == 0:
-            continue
-
-        nonce = w3.eth.getTransactionCount(me)
+        print('[INFO]', 'Claiming Note #' + str(vault), 'in', nonce, 'nonce...')
 
         tx = {
             'nonce': nonce,
@@ -80,16 +75,120 @@ for name, note in notes.items():
             'type': '0x2'
         }
 
-        print('Note #' + str(vault), nonce)
-
         tx = lake.functions.claimReward(address, vault).buildTransaction(tx)
 
         signed = w3.eth.account.signTransaction(tx, key)
 
         hash = w3.eth.sendRawTransaction(signed.rawTransaction)
 
-        print('Claimed!', w3.toHex(hash))
+        count = nonce
+    except ValueError as e:
+        print('[FAIL]', 'An error occured while claiming for Note #' + str(vault) + ' **')
 
-        time.sleep(2)
+        return claim(address, vault)
 
-    time.sleep(2)
+    return w3.toHex(hash)
+
+def get_items(note):
+    print('[INFO]', 'Getting current balance from note...')
+
+    items = None
+
+    try:
+        items = note.functions.balanceOf(me).call()
+    except ValueError as e:
+        print('[FAIL]', 'An error occured while getting balance from note **')
+
+        return get_items(note)
+
+    return items
+
+def get_nonce():
+    print('[INFO]', 'Getting current nonce...')
+
+    nonce = None
+
+    time.sleep(tout)
+
+    try:
+        nonce = w3.eth.getTransactionCount(me)
+
+        if nonce <= count:
+            print('[INFO]', 'Nonce:', nonce, 'Current:', count)
+            print('[WARN]', 'Nonce not changed. Updating...')
+
+            return get_nonce()
+    except ValueError as e:
+        print('[FAIL]', 'An error occured while getting the nonce **')
+
+        return get_nonce()
+
+    return nonce
+
+def get_pearl(address, vault):
+    print('[INFO]', 'Getting amount of PEARLs for Note #' + str(vault) + '...')
+
+    pearl = None
+
+    try:
+        pearl = lake.functions.reward(address, vault).call()
+    except ValueError as e:
+        print('[FAIL]', 'An error occured while getting PEARLs for Note #' + str(vault) + '...')
+
+        return get_pearl(vault)
+
+    return pearl
+
+def get_vault(index):
+    print('[INFO]', 'Getting vault ID for index ' + str(index) + '...')
+
+    vault = None
+
+    try:
+        vault = note.functions.tokenOfOwnerByIndex(me, index).call()
+    except ValueError as e:
+        print('[FAIL]', 'An error occured while getting vault ID for index ' + str(index) + '...')
+
+        return get_vault(index)
+
+    return int(vault)
+
+for name, note in notes.items():
+    print(name, note)
+
+    note = address = Web3.toChecksumAddress(note)
+    file = open(path + '/notes/' + name + '.json')
+    abi = json.loads(file.read())
+    note = w3.eth.contract(address = note, abi = abi)
+
+    items = get_items(note)
+    vaults = []
+
+    for index in range(items):
+        # if index in prev[name]:
+        #     print('Skipping index ' + str(index) + '...')
+        #     continue
+
+        vault = get_vault(index)
+        pearl = get_pearl(address, vault)
+
+        print('[INFO]', 'Note #' + str(vault), '-', pearl, 'PEARLs')
+
+        if pearl == 0:
+            print('[WARN]', 'Skipping Note #' + str(vault) + '...')
+
+            # prev[name].append(index)
+            # temp.seek(0)
+            # temp.write(json.dumps(prev))
+            # temp.truncate()
+
+            continue
+
+        hash = claim(address, vault)
+
+        print('[PASS]', 'Claimed!', hash)
+
+        # prev[name].append(index)
+        # temp.seek(0)
+        # temp.write(json.dumps(prev))
+        # temp.truncate()

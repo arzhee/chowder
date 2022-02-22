@@ -42,10 +42,10 @@ abi = json.loads(open(path + '/pearl.json').read())
 pearl = w3.eth.contract(address = pearl, abi = abi)
 pearl = pearl.functions.balanceOf(me).call()
 
+note = notes['180-sfhand']
+
 if len(sys.argv) == 2:
     note = notes[sys.argv[1]]
-else:
-    note = notes['180-sfhand']
 
 note = Web3.toChecksumAddress(note)
 
