@@ -5,6 +5,15 @@ import os
 import requests
 import sys
 
+names = {}
+names['014-sfhand'] = 'Safe-Hand 14-Day Note'
+names['028-frhand'] = 'Furry-Hand 28-Day Note'
+names['028-sfhand'] = 'Safe-Hand 28-Day Note'
+names['090-sfhand'] = 'Safe-Hand 90-Day Note'
+names['090-sthand'] = 'Stone-Hand 90-Day Note'
+names['180-dmhand'] = 'Diamond-Hand 180-Day Note'
+names['180-sfhand'] = 'Safe-Hand 180-Day Note'
+
 notes = {}
 notes['014-sfhand'] = '0xC713af03353710EA37DF849237E32a936a63cBbd'
 notes['028-frhand'] = '0x7C1a1C1e540E6c6F59F1748C3C2Edf39f8Cc06ee'
@@ -42,11 +51,12 @@ abi = json.loads(open(path + '/pearl.json').read())
 pearl = w3.eth.contract(address = pearl, abi = abi)
 pearl = pearl.functions.balanceOf(me).call()
 
-note = notes['180-sfhand']
+name = '180-sfhand'
 
 if len(sys.argv) == 2:
-    note = notes[sys.argv[1]]
+    name = sys.argv[1]
 
+note = notes[name]
 note = Web3.toChecksumAddress(note)
 
 tx = {
@@ -58,10 +68,16 @@ tx = {
     'type': '0x2'
 }
 
-print(note, pearl)
+amount = w3.fromWei(pearl, 'ether')
 
 if pearl == 0:
+    print('[WARN]', 'No PEARLs available to be locked')
+
     sys.exit()
+
+print('[INFO]', 'Current:', amount, 'PEARLs')
+print('[INFO]', 'Note:', names[name])
+print('[INFO]', 'Locking PEARLs to a new note...')
 
 tx = lake.functions.lock(note, pearl).buildTransaction(tx)
 
@@ -69,4 +85,4 @@ signed = w3.eth.account.signTransaction(tx, key)
 
 hash = w3.eth.sendRawTransaction(signed.rawTransaction)
 
-print(w3.toHex(hash))
+print('[PASS]', 'Locked!', w3.toHex(hash))

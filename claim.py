@@ -69,7 +69,7 @@ def claim(address, vault):
 
         count = nonce
     except ValueError as e:
-        print('[FAIL]', 'An error occured while claiming for Note #' + str(vault) + ' **')
+        print('[FAIL]', 'An error occured on claiming for Note #' + str(vault) + ' **')
 
         return claim(address, vault)
 
@@ -83,7 +83,7 @@ def get_items(note):
     try:
         items = note.functions.balanceOf(me).call()
     except ValueError as e:
-        print('[FAIL]', 'An error occured while getting balance from note **')
+        print('[FAIL]', 'An error occured on getting balance from note **')
 
         return get_items(note)
 
@@ -102,7 +102,7 @@ def get_nonce():
 
             return get_nonce()
     except ValueError as e:
-        print('[FAIL]', 'An error occured while getting the nonce **')
+        print('[FAIL]', 'An error occured on getting the nonce **')
 
         return get_nonce()
 
@@ -118,7 +118,7 @@ def get_pearl(address, vault):
     try:
         pearl = lake.functions.reward(address, vault).call()
     except ValueError as e:
-        print('[FAIL]', 'An error occured while getting PEARLs for Note #' + str(vault) + '...')
+        print('[FAIL]', 'An error occured on getting PEARLs for Note #' + str(vault) + ' **')
 
         return get_pearl(address, vault)
 
@@ -132,7 +132,7 @@ def get_vault(index):
     try:
         vault = note.functions.tokenOfOwnerByIndex(me, index).call()
     except ValueError as e:
-        print('[FAIL]', 'An error occured while getting vault ID for index ' + str(index) + '...')
+        print('[FAIL]', 'An error occured on getting vault ID for index ' + str(index) + ' **')
 
         return get_vault(index)
 
