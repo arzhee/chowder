@@ -42,13 +42,13 @@ def claim(address, vault):
 
     hash = None
 
-    link = 'https://api.debank.com/chain/'
-    link += 'gas_price_dict_v2?chain=matic'
-    data = requests.get(link).json()
-    price = int(data['data']['fast']['price'])
-
     try:
         nonce = get_nonce()
+
+        link = 'https://api.debank.com/chain/'
+        link += 'gas_price_dict_v2?chain=matic'
+        data = requests.get(link).json()
+        price = int(data['data']['fast']['price'])
 
         print('[INFO]', 'Claiming Note #' + str(vault), 'in', nonce, 'nonce...')
 
@@ -68,7 +68,7 @@ def claim(address, vault):
         hash = w3.eth.sendRawTransaction(signed.rawTransaction)
 
         count = nonce
-    except ValueError as e:
+    except Exception as e:
         print('[FAIL]', 'An error occured on claiming for Note #' + str(vault) + ' **')
 
         return claim(address, vault)
@@ -90,6 +90,8 @@ def get_items(note):
     return items
 
 def get_nonce():
+    global count
+
     print('[INFO]', 'Getting current nonce...')
 
     nonce = None
@@ -97,7 +99,16 @@ def get_nonce():
     try:
         nonce = w3.eth.getTransactionCount(me)
 
-        if int(nonce) <= int(count):
+        if int(nonce) == int(count):
+            time.sleep(tout)
+
+            return get_nonce()
+
+        if int(nonce) < int(count):
+            print('[WARN]', 'Nonce is below current...')
+
+            count = nonce
+
             time.sleep(tout)
 
             return get_nonce()
