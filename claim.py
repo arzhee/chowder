@@ -21,6 +21,15 @@ me = Web3.toChecksumAddress(me)
 count = 0
 tout = 10
 
+names = {}
+names['014-sfhand'] = 'Safe-Hand 14-Day Note'
+names['028-frhand'] = 'Furry-Hand 28-Day Note'
+names['028-sfhand'] = 'Safe-Hand 28-Day Note'
+names['090-sfhand'] = 'Safe-Hand 90-Day Note'
+names['090-sthand'] = 'Stone-Hand 90-Day Note'
+names['180-dmhand'] = 'Diamond-Hand 180-Day Note'
+names['180-sfhand'] = 'Safe-Hand 180-Day Note'
+
 notes = {}
 notes['014-sfhand'] = '0xC713af03353710EA37DF849237E32a936a63cBbd'
 notes['028-frhand'] = '0x7C1a1C1e540E6c6F59F1748C3C2Edf39f8Cc06ee'
@@ -38,12 +47,14 @@ lake = w3.eth.contract(address = lake, abi = abi)
 def claim(address, vault):
     global count
 
-    print('[INFO]', 'Claiming PEARLs for Note #' + str(vault) + '...')
-
     hash = None
 
     try:
+        print('[INFO]', 'Getting current nonce...')
+
         nonce = get_nonce()
+
+        print('[INFO]', 'Nonce:', nonce, 'Current:', count)
 
         link = 'https://api.debank.com/chain/'
         link += 'gas_price_dict_v2?chain=matic'
@@ -76,23 +87,17 @@ def claim(address, vault):
     return w3.toHex(hash)
 
 def get_items(note):
-    print('[INFO]', 'Getting current balance from note...')
-
     items = None
 
     try:
         items = note.functions.balanceOf(me).call()
     except ValueError as e:
-        print('[FAIL]', 'An error occured on getting balance from note **')
-
         return get_items(note)
 
     return items
 
 def get_nonce():
     global count
-
-    print('[INFO]', 'Getting current nonce...')
 
     nonce = None
 
@@ -113,44 +118,34 @@ def get_nonce():
 
             return get_nonce()
     except ValueError as e:
-        print('[FAIL]', 'An error occured on getting the nonce **')
-
         return get_nonce()
-
-    print('[INFO]', 'Nonce:', nonce, 'Current:', count)
 
     return nonce
 
 def get_pearl(address, vault):
-    print('[INFO]', 'Getting amount of PEARLs for Note #' + str(vault) + '...')
-
     pearl = None
 
     try:
         pearl = lake.functions.reward(address, vault).call()
     except ValueError as e:
-        print('[FAIL]', 'An error occured on getting PEARLs for Note #' + str(vault) + ' **')
-
         return get_pearl(address, vault)
 
     return pearl
 
-def get_vault(index):
-    print('[INFO]', 'Getting vault ID for index ' + str(index) + '...')
-
+def get_vault(note, index):
     vault = None
 
     try:
         vault = note.functions.tokenOfOwnerByIndex(me, index).call()
     except ValueError as e:
-        print('[FAIL]', 'An error occured on getting vault ID for index ' + str(index) + ' **')
-
-        return get_vault(index)
+        return get_vault(note, index)
 
     return int(vault)
 
 for name, note in notes.items():
-    print(name, note)
+    detail = names[name]
+
+    print('[INFO]', 'Getting', detail + '/s...')
 
     note = address = Web3.toChecksumAddress(note)
     file = open(path + '/notes/' + name + '.json')
@@ -161,17 +156,18 @@ for name, note in notes.items():
     vaults = []
 
     for index in range(items):
-        vault = get_vault(index)
+        vault = get_vault(note, index)
         pearl = get_pearl(address, vault)
 
-        print('[INFO]', 'Note #' + str(vault), '-', pearl, 'PEARLs')
+        print('[INFO]', detail, '#' + str(vault))
+        print('[INFO]', 'Reward:', w3.fromWei(pearl, 'ether'), 'PEARLs')
 
         if pearl == 0:
-            print('[WARN]', 'Skipping Note #' + str(vault) + '...')
-
             continue
+
+        print('[INFO]', 'Claiming PEARLs...')
 
         hash = claim(address, vault)
 
         print('[PASS]', 'Claimed!', hash)
-        print('[INFO] Current:', count)
+        print('[PASS]', 'Current:', count)
