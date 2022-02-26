@@ -20,7 +20,10 @@ w3 = Web3(Web3.HTTPProvider(rpc))
 me = Web3.toChecksumAddress(me)
 count = 0
 tout = 10
-base = 0.2
+base = 1
+
+if len(sys.argv) == 2:
+    base = float(sys.argv[1])
 
 names = {}
 names['014-sfhand'] = 'Safe-Hand 14-Day Note'
@@ -109,7 +112,7 @@ def get_locked(note, vault):
     try:
         locked = note.functions.lockAmount(vault).call()
     except ValueError as e:
-        print('[FAIL]', e.message)
+        print('[FAIL]', e)
 
         return get_locked(note, vault)
 
@@ -178,7 +181,7 @@ for name, note in notes.items():
         if pearl < locked:
             print('[WARN]', 'Insufficient PEARLs in wallet...')
 
-            sys.exit()
+            continue
 
         tolock = w3.toWei(base, 'ether') - locked
         elocked = w3.fromWei(tolock, 'ether')
