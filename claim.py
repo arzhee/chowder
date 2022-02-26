@@ -80,7 +80,7 @@ def claim(address, vault):
 
         count = nonce
     except Exception as e:
-        print('[FAIL]', 'An error occured on claiming for Note #' + str(vault) + ' **')
+        print('[FAIL]', e)
 
         return claim(address, vault)
 
@@ -160,12 +160,11 @@ for name, note in notes.items():
         pearl = get_pearl(address, vault)
 
         print('[INFO]', detail, '#' + str(vault))
-        print('[INFO]', 'Reward:', w3.fromWei(pearl, 'ether'), 'PEARLs')
 
         if pearl == 0:
             continue
 
-        print('[INFO]', 'Claiming PEARLs...')
+        print('[INFO]', 'Claiming', w3.fromWei(pearl, 'ether'), 'PEARLs')
 
         hash = claim(address, vault)
 
