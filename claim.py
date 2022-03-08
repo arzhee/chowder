@@ -170,3 +170,5 @@ for name, note in notes.items():
 
         print('[PASS]', 'Claimed!', hash)
         print('[PASS]', 'Current:', count)
+
+        time.sleep(tout)

@@ -196,3 +196,5 @@ for name, note in notes.items():
             print('[PASS]', 'Current:', count)
 
             pearl = pearl - tolock
+
+            time.sleep(tout)
