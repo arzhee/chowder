@@ -101,7 +101,7 @@ def get_items(note):
 
     try:
         items = note.functions.balanceOf(me).call()
-    except ValueError as e:
+    except Exception as e:
         return get_items(note)
 
     return items
@@ -175,26 +175,31 @@ for name, note in notes.items():
         print('[INFO]', detail, '#' + str(vault))
         print('[INFO]', 'Locked:', ether, 'PEARLs')
 
+        # do not relock vaults that are greater than base
         if ether >= base:
             continue
 
-        if pearl < locked:
-            print('[WARN]', 'Insufficient PEARLs in wallet...')
-
-            continue
+        # finish loop if there are no more pearls to lock
+        if pearl == 0:
+            break
 
         tolock = w3.toWei(base, 'ether') - locked
+        ether = w3.fromWei(pearl, 'ether')
         elocked = w3.fromWei(tolock, 'ether')
 
-        if pearl > tolock and tolock > 0:
-            print('[INFO]', 'Locking', elocked, 'PEARLs...')
+        # relock remaining pearls
+        if ether < elocked:
+            elocked = ether
+            tolock = pearl
 
-            hash = relock(address, vault, tolock)
+        print('[INFO]', 'Locking', elocked, 'PEARLs...')
 
-            print('[PASS]', 'Locked', w3.fromWei(tolock, 'ether'), 'PEARLs!')
-            print('[PASS]', hash)
-            print('[PASS]', 'Current:', count)
+        hash = relock(address, vault, tolock)
 
-            pearl = pearl - tolock
+        print('[PASS]', 'Locked', elocked, 'PEARLs!')
+        print('[PASS]', hash)
+        print('[PASS]', 'Current:', count)
 
-            time.sleep(tout)
+        pearl = pearl - tolock
+
+        time.sleep(tout)
