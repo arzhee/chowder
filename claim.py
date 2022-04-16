@@ -91,7 +91,7 @@ def get_items(note):
 
     try:
         items = note.functions.balanceOf(me).call()
-    except ValueError as e:
+    except Exception as e:
         return get_items(note)
 
     return items
@@ -117,7 +117,7 @@ def get_nonce():
             time.sleep(tout)
 
             return get_nonce()
-    except ValueError as e:
+    except Exception as e:
         return get_nonce()
 
     return nonce
@@ -127,7 +127,7 @@ def get_pearl(address, vault):
 
     try:
         pearl = lake.functions.reward(address, vault).call()
-    except ValueError as e:
+    except Exception as e:
         return get_pearl(address, vault)
 
     return pearl
@@ -137,7 +137,7 @@ def get_vault(note, index):
 
     try:
         vault = note.functions.tokenOfOwnerByIndex(me, index).call()
-    except ValueError as e:
+    except Exception as e:
         return get_vault(note, index)
 
     return int(vault)
