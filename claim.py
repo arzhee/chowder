@@ -168,7 +168,7 @@ for name, note in notes.items():
 
         hash = claim(address, vault)
 
-        print('[PASS]', 'Claimed!', hash)
+        print('[PASS]', hash)
         print('[PASS]', 'Current:', count)
 
         time.sleep(tout)
