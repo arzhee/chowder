@@ -36,10 +36,10 @@ The code above will check of all the existing PEARL notes (e.g. 14-day Safe-hand
 ### Locking PEARLs to new note
 
 ```
-$ python lock.py [type]
+$ python lock.py [amount] [type]
 ```
 
-Executing the specified script will lock all of the amount of PEARLs available in the provided wallet address. If `[type]` is not specified, the default value will be `180-day Safe-hand` note.
+Executing the specified script will lock all of the amount of PEARLs available in the provided wallet address. If `[amount]` is not specified, the default value is `1 PEARL` per note. If `[type]` is not specified, the default value will be `180-day Safe-hand` note.
 
 #### Available PEARL notes for [type]
 

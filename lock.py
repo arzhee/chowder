@@ -1,9 +1,11 @@
 from dotenv import load_dotenv
 from web3 import Web3
 import json
+import math
 import os
 import requests
 import sys
+import time
 
 names = {}
 names['014-sfhand'] = 'Safe-Hand 14-Day Note'
@@ -38,7 +40,6 @@ price = int(data['data']['fast']['price'])
 
 w3 = Web3(Web3.HTTPProvider(rpc))
 me = Web3.toChecksumAddress(me)
-nonce = w3.eth.getTransactionCount(me)
 
 lake = '0xc67abda25d0421fe9dc1afd64183b179a426a256'
 lake = Web3.toChecksumAddress(lake)
@@ -52,23 +53,20 @@ pearl = w3.eth.contract(address = pearl, abi = abi)
 pearl = pearl.functions.balanceOf(me).call()
 
 name = '180-sfhand'
+base = 1
+tout = 10
 
 if len(sys.argv) == 2:
-    name = sys.argv[1]
+    base = float(sys.argv[1])
+
+if len(sys.argv) == 3:
+    name = sys.argv[2]
 
 note = notes[name]
 note = Web3.toChecksumAddress(note)
 
-tx = {
-    'nonce': nonce,
-    'gas': 400000,
-    'maxPriorityFeePerGas': price,
-    'maxFeePerGas': price,
-    'from': me,
-    'type': '0x2'
-}
-
 amount = w3.fromWei(pearl, 'ether')
+count = math.floor(float(amount) / float(base))
 
 if pearl == 0:
     print('[WARN]', 'No PEARLs available to be locked')
@@ -76,13 +74,31 @@ if pearl == 0:
     sys.exit()
 
 print('[INFO]', 'Current:', amount, 'PEARLs')
+print('[INFO]', 'Limit:', base, 'PEARLs per note')
+print('[INFO]', 'Number of Notes:', count)
 print('[INFO]', 'Note:', names[name])
 print('[INFO]', 'Locking PEARLs to a new note...')
 
-tx = lake.functions.lock(note, pearl).buildTransaction(tx)
+for index in range(count):
+    nonce = w3.eth.getTransactionCount(me)
 
-signed = w3.eth.account.signTransaction(tx, key)
+    tx = {
+        'nonce': nonce,
+        'gas': 400000,
+        'maxPriorityFeePerGas': price,
+        'maxFeePerGas': price,
+        'from': me,
+        'type': '0x2'
+    }
 
-hash = w3.eth.sendRawTransaction(signed.rawTransaction)
+    current = w3.toWei(base, 'ether')
 
-print('[PASS]', 'Locked!', w3.toHex(hash))
+    tx = lake.functions.lock(note, current).buildTransaction(tx)
+
+    signed = w3.eth.account.signTransaction(tx, key)
+
+    hash = w3.eth.sendRawTransaction(signed.rawTransaction)
+
+    print('[PASS]', w3.toHex(hash))
+
+    time.sleep(tout)
